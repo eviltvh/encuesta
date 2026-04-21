@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F0EAFF">
+  <title>Lugares — Te late ✦</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F0EAFF;
+      --card: #FFFFFF;
+      --border: #E0D5F5;
+      --text: #2A2342;
+      --text-muted: #7C7296;
+      --accent: #B09BE0;
+      --dislike: #FF6B6B;
+      --like: #6BCB77;
+      --ultra: #FFD93D;
+      --radius: 24px;
+      --radius-sm: 16px;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-ui: 'DM Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg);
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(176, 155, 224, 0.25) 1px, transparent 0);
+      background-size: 22px 22px;
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 420px;
+      height: min(calc(100dvh - 32px), 780px);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .screen.hidden { display: none; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== PROGRESS ===== */
+    .progress {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0 6px;
+      height: 28px;
+    }
+
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .progress-dot.active {
+      background: var(--text);
+      width: 24px;
+      border-radius: 4px;
+    }
+
+    .progress-dot.done {
+      background: var(--accent);
+      opacity: 0.6;
+    }
+
+    /* ===== CARD ===== */
+    .card-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+    }
+
+    .card {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--card);
+      border: 2px solid var(--border);
+      box-shadow:
+        0 24px 48px -24px rgba(42, 35, 66, 0.25),
+        0 8px 16px -8px rgba(42, 35, 66, 0.08);
+      transition: transform 0.38s cubic-bezier(0.4, 0.0, 0.6, 1), opacity 0.3s ease;
+      will-change: transform, opacity;
+    }
+
+    .card-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 160px;
+      line-height: 1;
+      background: linear-gradient(135deg, #F4EEFF 0%, #E0D5F5 50%, #FFE8F0 100%);
+      z-index: 0;
+      filter: drop-shadow(0 10px 20px rgba(42, 35, 66, 0.12));
+    }
+
+    .card-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+      -webkit-user-drag: none;
+    }
+
+    .card-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 28px 24px 24px;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0) 100%);
+      color: white;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .card-name {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 38px;
+      line-height: 1;
+      letter-spacing: -0.01em;
+      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-emoji {
+      font-size: 34px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+    }
+
+    .card.exit-left {
+      transform: translateX(-130%) rotate(-12deg);
+      opacity: 0;
+    }
+
+    .card.exit-right {
+      transform: translateX(130%) rotate(12deg);
+      opacity: 0;
+    }
+
+    .card.exit-up {
+      transform: translateY(-130%) scale(0.9);
+      opacity: 0;
+    }
+
+    .card.enter {
+      animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(24px) scale(0.96); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    /* ===== BUTTONS ===== */
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      font-family: var(--font-ui);
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 12px 8px;
+      min-height: 66px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-size: 13px;
+      color: white;
+      transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: 0.01em;
+    }
+
+    .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .btn-icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .btn-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-dislike { background: var(--dislike); }
+    .btn-like    { background: var(--like); }
+    .btn-ultra   { background: var(--ultra); color: #5A4A00; }
+
+    /* ===== STATUS INDICATOR ===== */
+    .status {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      z-index: 100;
+      transition: background 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+    }
+
+    .status.sending {
+      background: var(--ultra);
+      animation: statusPulse 1s ease-in-out infinite;
+    }
+
+    .status.ok { background: var(--like); }
+    .status.error { background: var(--dislike); }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.25); }
+    }
+
+    /* ===== FINAL SCREEN ===== */
+    .final {
+      flex: 1;
+      padding: 28px 24px;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+      box-shadow: 0 24px 48px -24px rgba(42, 35, 66, 0.2);
+    }
+
+    .final h1 {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 34px;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+    }
+
+    .final h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .final .sub {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: space-around;
+      padding: 18px 12px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      gap: 8px;
+    }
+
+    .summary-item {
+      text-align: center;
+      flex: 1;
+    }
+
+    .summary-emoji {
+      font-size: 22px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .summary-count {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .summary-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+
+    .name-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .name-section h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .input {
+      font-family: var(--font-ui);
+      font-size: 16px;
+      font-weight: 500;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      width: 100%;
+      color: var(--text);
+    }
+
+    .input:focus {
+      border-color: var(--text);
+      background: white;
+    }
+
+    .input::placeholder { color: var(--text-muted); opacity: 0.7; }
+
+    .btn-primary {
+      background: var(--text);
+      color: white;
+      min-height: 52px;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      box-shadow: none;
+      font-weight: 500;
+      min-height: 40px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .btn-ghost:active {
+      transform: none;
+      box-shadow: none;
+      color: var(--text);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .btn-link {
+      text-decoration: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div id="status" class="status" aria-hidden="true"></div>
+
+    <section id="screen-game" class="screen">
+      <div class="progress" id="progress"></div>
+      <div class="card-wrap" id="card-wrap"></div>
+      <div class="buttons">
+        <button class="btn btn-dislike" data-vote="-1" aria-label="Dislike">
+          <span class="btn-icon" aria-hidden="true">💔</span>
+          <span class="btn-label">Nope</span>
+        </button>
+        <button class="btn btn-like" data-vote="1" aria-label="Like">
+          <span class="btn-icon" aria-hidden="true">💚</span>
+          <span class="btn-label">Like</span>
+        </button>
+        <button class="btn btn-ultra" data-vote="2" aria-label="Ultra Like">
+          <span class="btn-icon" aria-hidden="true">⭐</span>
+          <span class="btn-label">Ultra</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="screen-final" class="screen hidden">
+      <div class="final">
+        <div>
+          <h1>¡Listo! <em>✦</em></h1>
+          <p class="sub">Esto fue lo que te prendió:</p>
+        </div>
+
+        <div class="summary">
+          <div class="summary-item">
+            <div class="summary-emoji">⭐</div>
+            <div class="summary-count" id="count-ultra">0</div>
+            <div class="summary-label">Ultra</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-emoji">💚</div>
+            <div class="summary-count" id="count-like">0</div>
+            <div class="summary-label">Like</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-emoji">💔</div>
+            <div class="summary-count" id="count-dislike">0</div>
+            <div class="summary-label">Nope</div>
+          </div>
+        </div>
+
+        <div id="name-section" class="name-section"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ================================================================
+    //  CONFIG — Reemplazar APPS_SCRIPT_URL con la URL del deploy.
+    // ================================================================
+    const APPS_SCRIPT_URL = "PEGAR_URL_APPS_SCRIPT_AQUI";
+    const SHEET_NAME = "lugares";
+
+    // ================================================================
+    //  DATOS
+    // ================================================================
+    const lugares = [
+      { nombre: "Parque",          img: "img/parque.png",       emoji: "🌳" },
+      { nombre: "Café",            img: "img/cafe.png",         emoji: "☕" },
+      { nombre: "Museo",           img: "img/museo.png",        emoji: "🏛️" },
+      { nombre: "Cinema",          img: "img/cinema.png",       emoji: "🎬" },
+      { nombre: "Mercado",         img: "img/mercado.png",      emoji: "🛍️" },
+      { nombre: "Restaurante",     img: "img/restaurante.png",  emoji: "🍽️" },
+      { nombre: "Bowling",         img: "img/bowling.png",      emoji: "🎳" },
+      { nombre: "Mirador",         img: "img/mirador.png",      emoji: "🌅" },
+      { nombre: "Galería",         img: "img/galeria.png",      emoji: "🖼️" },
+      { nombre: "Jardín Botánico", img: "img/jardin.png",       emoji: "🌿" },
+    ];
+
+    // ================================================================
+    //  ESTADO
+    // ================================================================
+    const state = {
+      items: [],
+      currentIndex: 0,
+      votes: {},          // { "Bugambilia": 2, "Rosa": -1, ... }
+      sessionId: "",
+      nombre: "",
+      sending: 0,         // POSTs en vuelo (para indicador)
+      hadError: false,
+    };
+
+    // ================================================================
+    //  UTILIDADES
+    // ================================================================
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = String(s);
+      return d.innerHTML;
+    }
+
+    function vibrate(ms) {
+      if (navigator.vibrate) {
+        try { navigator.vibrate(ms); } catch (e) { /* noop */ }
+      }
+    }
+
+    function actualizarIndicador(estado) {
+      const el = document.getElementById('status');
+      el.className = 'status ' + estado;
+    }
+
+    // ================================================================
+    //  INIT
+    // ================================================================
+    function init() {
+      // Session ID (persistente entre juegos del mismo dispositivo)
+      let sid = localStorage.getItem('session_id');
+      if (!sid) {
+        sid = Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('session_id', sid);
+      }
+      state.sessionId = sid;
+
+      // Nombre previo (si existe)
+      state.nombre = localStorage.getItem('usuario_nombre') || '';
+
+      // Barajar items
+      state.items = shuffle(lugares);
+
+      renderProgress();
+      mostrarItem(0);
+
+      // Enlazar botones de voto
+      document.querySelectorAll('.btn[data-vote]').forEach(btn => {
+        btn.addEventListener('click', () => votar(parseInt(btn.dataset.vote, 10)));
+      });
+    }
+
+    // ================================================================
+    //  RENDER
+    // ================================================================
+    function renderProgress() {
+      const container = document.getElementById('progress');
+      container.innerHTML = '';
+      for (let i = 0; i < state.items.length; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot';
+        if (i < state.currentIndex) dot.classList.add('done');
+        else if (i === state.currentIndex) dot.classList.add('active');
+        container.appendChild(dot);
+      }
+    }
+
+    function mostrarItem(index) {
+      const item = state.items[index];
+      const wrap = document.getElementById('card-wrap');
+
+      const card = document.createElement('div');
+      card.className = 'card enter';
+      card.dataset.index = String(index);
+      card.innerHTML = `
+        <div class="card-fallback" aria-hidden="true">${escapeHtml(item.emoji)}</div>
+        <img class="card-img" alt="${escapeHtml(item.nombre)}" src="${escapeHtml(item.img)}"
+             onerror="this.style.display='none'">
+        <div class="card-overlay">
+          <span class="card-name">${escapeHtml(item.nombre)}</span>
+          <span class="card-emoji" aria-hidden="true">${escapeHtml(item.emoji)}</span>
+        </div>
+      `;
+      wrap.appendChild(card);
+      renderProgress();
+    }
+
+    // ================================================================
+    //  VOTACIÓN
+    // ================================================================
+    function votar(puntos) {
+      // Evitar doble-tap
+      const botones = document.querySelectorAll('.btn[data-vote]');
+      botones.forEach(b => b.disabled = true);
+
+      const item = state.items[state.currentIndex];
+      state.votes[item.nombre] = puntos;
+      vibrate(puntos === 2 ? [12, 40, 12] : 10);
+
+      // Animación de salida según el voto
+      const cards = document.querySelectorAll('#card-wrap .card');
+      const actual = cards[cards.length - 1];
+      if (actual) {
+        if (puntos === -1)      actual.classList.add('exit-left');
+        else if (puntos === 2)  actual.classList.add('exit-up');
+        else                    actual.classList.add('exit-right');
+      }
+
+      state.currentIndex++;
+
+      // POST en background (no bloqueamos UI)
+      enviarVoto({
+        item: item.nombre,
+        voto: puntos,
+        completado: false
+      });
+
+      setTimeout(() => {
+        // Limpiar cards que salieron
+        document.querySelectorAll('#card-wrap .card').forEach(c => {
+          if (c.classList.contains('exit-left') ||
+              c.classList.contains('exit-right') ||
+              c.classList.contains('exit-up')) {
+            c.remove();
+          }
+        });
+
+        if (state.currentIndex < state.items.length) {
+          mostrarItem(state.currentIndex);
+          botones.forEach(b => b.disabled = false);
+        } else {
+          mostrarPantallaFinal();
+        }
+      }, 380);
+    }
+
+    // ================================================================
+    //  ENVÍO A APPS SCRIPT
+    // ================================================================
+    async function enviarVoto(data, intentos = 0) {
+      if (intentos === 0) {
+        state.sending++;
+        actualizarIndicador("sending");
+      }
+
+      const payload = {
+        sheet: SHEET_NAME,
+        session_id: state.sessionId,
+        nombre: state.nombre,
+        item: data.item,
+        voto: data.voto,
+        completado: data.completado,
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        state.sending--;
+        if (!state.hadError) {
+          actualizarIndicador(state.sending === 0 ? "ok" : "sending");
+        }
+      } catch (e) {
+        if (intentos < 3) {
+          // Reintento con backoff: 2s, 4s, 6s
+          setTimeout(() => enviarVoto(data, intentos + 1), 2000 * (intentos + 1));
+        } else {
+          state.sending--;
+          state.hadError = true;
+          actualizarIndicador("error");
+        }
+      }
+    }
+
+    async function enviarSetNombre() {
+      const payload = {
+        sheet: SHEET_NAME,
+        session_id: state.sessionId,
+        nombre: state.nombre,
+        accion: "set_nombre",
+        timestamp: new Date().toISOString()
+      };
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.warn('set_nombre falló', e);
+      }
+    }
+
+    async function marcarCompletado() {
+      // Reenviar cada voto con completado: true
+      // El Apps Script detecta session_id + item y actualiza la fila existente.
+      const tareas = Object.entries(state.votes).map(([item, voto]) =>
+        enviarVoto({ item, voto, completado: true })
+      );
+      await Promise.allSettled(tareas);
+    }
+
+    // ================================================================
+    //  PANTALLA FINAL
+    // ================================================================
+    function mostrarPantallaFinal() {
+      document.getElementById('screen-game').classList.add('hidden');
+      document.getElementById('screen-final').classList.remove('hidden');
+
+      // Resumen
+      const counts = { ultra: 0, like: 0, dislike: 0 };
+      Object.values(state.votes).forEach(v => {
+        if (v === 2) counts.ultra++;
+        else if (v === 1) counts.like++;
+        else counts.dislike++;
+      });
+      document.getElementById('count-ultra').textContent = counts.ultra;
+      document.getElementById('count-like').textContent = counts.like;
+      document.getElementById('count-dislike').textContent = counts.dislike;
+
+      renderNameSection();
+    }
+
+    function renderNameSection() {
+      const section = document.getElementById('name-section');
+      if (state.nombre) {
+        section.innerHTML = `
+          <h2>¿Eres ${escapeHtml(state.nombre)}?</h2>
+          <button class="btn btn-primary" id="btn-confirmar">Sí, soy yo</button>
+          <button class="btn btn-ghost" id="btn-cambiar">No, soy otra persona</button>
+        `;
+        document.getElementById('btn-confirmar').addEventListener('click', () => confirmarNombre(state.nombre));
+        document.getElementById('btn-cambiar').addEventListener('click', cambiarNombre);
+      } else {
+        section.innerHTML = `
+          <h2>¿Cuál es tu nombre?</h2>
+          <input type="text" id="nombre-input" class="input" placeholder="Tu nombre" maxlength="40" autocomplete="off">
+          <button class="btn btn-primary" id="btn-guardar">Enviar</button>
+        `;
+        const input = document.getElementById('nombre-input');
+        const btn = document.getElementById('btn-guardar');
+        btn.addEventListener('click', guardarNombreDesdeInput);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') guardarNombreDesdeInput();
+        });
+        setTimeout(() => input.focus(), 120);
+      }
+    }
+
+    function cambiarNombre() {
+      state.nombre = '';
+      localStorage.removeItem('usuario_nombre');
+      renderNameSection();
+    }
+
+    function guardarNombreDesdeInput() {
+      const input = document.getElementById('nombre-input');
+      const nombre = input.value.trim();
+      if (!nombre) {
+        input.focus();
+        return;
+      }
+      state.nombre = nombre;
+      localStorage.setItem('usuario_nombre', nombre);
+      confirmarNombre(nombre);
+    }
+
+    async function confirmarNombre(nombre) {
+      state.nombre = nombre;
+      localStorage.setItem('usuario_nombre', nombre);
+
+      const section = document.getElementById('name-section');
+      section.innerHTML = `
+        <h2>¡Gracias, ${escapeHtml(nombre)}! <em>✦</em></h2>
+        <p class="sub">Guardando tus respuestas…</p>
+      `;
+
+      // 1) Vincular nombre a la sesión
+      await enviarSetNombre();
+      // 2) Marcar todas las filas como completadas
+      await marcarCompletado();
+
+      // Acciones finales
+      section.innerHTML = `
+        <h2>¡Listo, ${escapeHtml(nombre)}! <em>✦</em></h2>
+        <p class="sub">Tus respuestas quedaron guardadas.</p>
+        <div class="actions">
+          <a href="../" class="btn btn-primary btn-link">Volver al inicio</a>
+          <a href="../flores/" class="btn btn-ghost btn-link">Jugar flores</a>
+        </div>
+      `;
+    }
+
+    // ================================================================
+    //  ARRANQUE
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
